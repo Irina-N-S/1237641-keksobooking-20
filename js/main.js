@@ -1,14 +1,23 @@
 'use strict';
 
+var MAP_BLOCK_WIDTH = 1200;
+var MAP_BLOCK_HEIGHT = 501;
+var MAP_BLOCK_HEIGHT_SHIFT = 130;
+
+var PIN_SHIFT_X = -50 / 2;
+var PIN_SHIFT_Y = -70;
+
+var MOCK_SET_COUNT = 8;
+var AVATAR_SET_COUNT = 8;
+
 var offerFactory = function (size) {
 
   var getRandomInt = function (max) {
     return Math.floor(Math.random() * Math.floor(max));
   };
 
-  var arrayShuffle = function (array) {
-    // eslint-disable-next-line no-unused-vars
-    array.sort(function (e) {
+  var shuffleArray = function (array) {
+    array.sort(function () {
       return Math.random() - 0.5;
     });
   };
@@ -19,10 +28,14 @@ var offerFactory = function (size) {
     return array[randomIndex];
   };
 
+  var copyArray = function (array) {
+    return array.slice();
+  };
+
   var getRandomArrayElements = function (source) {
     var len = getRandomInt(source.length) + 1;
-    var result = source.copyWithin(0, 0);
-    arrayShuffle(result);
+    var result = copyArray(source);
+    shuffleArray(result);
     for (var i = source.length; i > len; i--) {
       result.pop();
     }
@@ -30,22 +43,23 @@ var offerFactory = function (size) {
   };
 
   var avatarGenerator = {
-    ar: [],
+    stackOfAvatars: [],
     size: function () {
-      return this.ar.length;
+      return this.stackOfAvatars.length;
     },
     generate: function (count) {
+      var DOZEN = 10;
       for (var i = 1; i <= count; i++) {
         var index = i;
-        if (i < 10) {
+        if (i < DOZEN) {
           index = '0' + i;
         }
-        this.ar.push('img/avatars/user' + index + '.png');
+        this.stackOfAvatars.push('img/avatars/user' + index + '.png');
       }
-      arrayShuffle(this.ar);
+      shuffleArray(this.stackOfAvatars);
     },
     pop: function () {
-      return this.ar.pop();
+      return this.stackOfAvatars.pop();
     }
   };
 
@@ -53,13 +67,13 @@ var offerFactory = function (size) {
 
     var getRandomAvatar = function () {
       if (avatarGenerator.size() === 0) {
-        avatarGenerator.generate(8);
+        avatarGenerator.generate(AVATAR_SET_COUNT);
       }
       return avatarGenerator.pop();
     };
 
-    var locationX = getRandomInt(800);
-    var locationY = getRandomInt(500) + 50;
+    var locationX = getRandomInt(MAP_BLOCK_WIDTH);
+    var locationY = getRandomInt(MAP_BLOCK_HEIGHT) + MAP_BLOCK_HEIGHT_SHIFT;
 
     return {
       'author': {
@@ -94,24 +108,28 @@ var offerFactory = function (size) {
 
 var pinButton = document.getElementById('pin').content.querySelector('button');
 var mapPins = document.querySelector('.map__pins');
+var map = document.querySelector('.map');
 
 var generatePinFragment = function (info) {
   var fragment = document.createDocumentFragment();
   var pin = pinButton.cloneNode(true);
-  fragment.appendChild(pin);
 
   var img = pin.querySelector('img');
   img.src = info.author.avatar;
   img.alt = info.offer.title;
 
-  var x = info.location.x + 50 / 2;
-  var y = info.location.y + 70;
+  var x = info.location.x + PIN_SHIFT_X;
+  var y = info.location.y + PIN_SHIFT_Y;
 
   pin.setAttribute('style', 'left: ' + x + 'px; top: ' + y + 'px;');
+
+  fragment.appendChild(pin);
   return fragment;
 };
 
-offerFactory(8).forEach(function (info) {
+map.classList.remove('map--faded');
+
+offerFactory(MOCK_SET_COUNT).forEach(function (info) {
   var fragment = generatePinFragment(info);
   mapPins.appendChild(fragment);
 });
